@@ -6,14 +6,14 @@ Alibaba Cloud Compute Services Guide
 Introduction
 ````````````
 
-Ansible contains several modules for controlling and managing Alibaba Cloud Compute Services (Alicloud).  The purpose of this
-section is to explain how to put Ansible modules together to use Ansible in Alicloud context.
+Ansible contains several modules for controlling and managing Alibaba Cloud Compute Services (Alicloud).  This guide
+explains how to use the Alicloud Ansible modules together.
 
-All of the modules require footmark and it can be installed by python's "sudo pip install footmark" in your control machine.
+All Alicloud modules require ``footmark`` - install it on your control machine with ``pip install footmark``.
 
-Classically, ansible will execute tasks in remote machines which defined in its hosts, most cloud-control steps occur on your local machine with reference to the regions to control.
+Cloud modules, including Alicloud modules, execute on your local machine (the control machine) with ``connection: local``, rather than on remote machines defined in your hosts.
 
-Normally, we'll use the following pattern for provisioning steps::
+Normally, you'll use the following pattern for plays that provision Alicloud resources::
 
     - hosts: localhost
       connection: local
@@ -27,41 +27,40 @@ Normally, we'll use the following pattern for provisioning steps::
 Authentication
 ``````````````
    
-Authentication with the Alicloud-related modules is handled by either
-specifying your access and secret key as ENV variables or module arguments.
+You can specify your Alicloud authentication credentials (access key and secret key) by passing them as
+environment variables or by storing them in a vars file.
 
-For environment variables::
+To pass authentication credentials as environment variables::
 
     export ALICLOUD_ACCESS_KEY='Alicloud123'
     export ALICLOUD_SECRET_KEY='AlicloudSecret123'
 
-For storing these in a vars_file, ideally encrypted with `ansible-vault <https://docs.ansible.com/ansible/2.4/vault.html>`_ considering its security::
+To store authentication credentials in a vars_file, encrypt them with :doc:`Ansible Vault<../user_guide/vault>` to keep them secure, then list them::
 
     ---
     alicloud_access_key: "--REMOVED--"
     alicloud_secret_key: "--REMOVED--"
 
-Note that if you store your credentials in vars_file, you need to refer to them in each Alicloud-module. For example::
+Note that if you store your credentials in a vars_file, you need to refer to them in each Alicloud module. For example::
 
     - alicloud_instance:
-      alicloud_access_key: "{{alicloud_access_key}}"
-      alicloud_secret_key: "{{alicloud_secret_key}}"
-      image_id: "..."
+        alicloud_access_key: "{{alicloud_access_key}}"
+        alicloud_secret_key: "{{alicloud_secret_key}}"
+        image_id: "..."
 
 .. _alicloud_provisioning:
 
 Provisioning
 ````````````
 
-There are a number of modules to create ECS instance, disk, VPC, VSwitch, Security Group and other resources.
+Alicloud modules create Alicloud ECS instances, disks, virtual private clouds, virtual switches, security groups and other resources.
 
-An example of making sure there are only 5 instances tagged 'NewECS' and other resources as Alicloud Module follows.
+You can use the ``count`` parameter to control the number of resources you create or terminate. For example, if you want exactly 5 instances tagged ``NewECS``,
+set the ``count`` of instances to 5 and the ``count_tag`` to ``NewECS``, as shown in the last task of the example playbook below.
+If there are no instances with the tag ``NewECS``, the task creates 5 new instances. If there are 2 instances with that tag, the task
+creates 3 more. If there are 8 instances with that tag, the task terminates 3 of those instances.
 
-In the example below, the ``count`` of instances is set to 5. This means if there are 0 instances already existing, then
-5 new instances would be created. If there were 2 instances, only 3 would be created, and if there were 8 instances,
-3 instances would be terminated.
-
-If ``count_tag`` is not specified, ``coun`` would use ``instance_name`` to create specified number of instances.
+If you do not specify a ``count_tag``, the task creates the number of instances you specify in ``count`` with the ``instance_name`` you provide.
 
 ::
 
@@ -119,8 +118,8 @@ If ``count_tag`` is not specified, ``coun`` would use ``instance_name`` to creat
              vswitch_id: '{{ created_vsw.vswitch_id}}'
           register: create_instance
 
-The data about what vpc, vswitch, instances and other resource are created are being saved by the "register" keyword in the corresponding variable.
+In the example playbook above, data about the vpc, vswitch, group, and instances created by this playbook
+are saved in the variables defined by the "register" keyword in each task.
 
-Each of the Alicloud modules offers a variety of parameter options. Not all options are demonstrated in the above example.
+Each Alicloud module offers a variety of parameter options. Not all options are demonstrated in the above example.
 See each individual module for further details and examples.
-
